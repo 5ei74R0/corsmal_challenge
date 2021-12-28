@@ -1,8 +1,9 @@
-# User Difinition
+# User Difinition (domain specific)
 /data/**/*
 !/data/README.md
-!/data/README.md
+!/data/corsmal_data.csv
 
+### Template for Python (provided by GitHub)
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
