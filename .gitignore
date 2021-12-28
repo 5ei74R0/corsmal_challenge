@@ -1,3 +1,8 @@
+# User Difinition
+/data/**/*
+!/data/README.md
+!/data/README.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
