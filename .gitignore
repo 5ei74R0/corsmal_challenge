@@ -1,4 +1,5 @@
 # User Difinition (domain specific)
+.vscode
 /data/**/*
 !/data/README.md
 !/data/corsmal_data.csv
