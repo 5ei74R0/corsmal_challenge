@@ -21,4 +21,4 @@ repo. for [**The CORSMAL challenge: Audio-visual object classification for human
 
 ### Dataset
 Download from [official page](https://corsmal.eecs.qmul.ac.uk/containers_manip.html) & unzip them into `data/` directory.  
-See `data/` directory.
+See `data/` directory for more information.
