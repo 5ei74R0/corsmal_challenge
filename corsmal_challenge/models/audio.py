@@ -18,6 +18,12 @@ class LogMelEncoder(nn.Module):
     ):
         super(LogMelEncoder, self).__init__()
 
+        self.in_channels: int = in_channels
+        self.num_encoder_blocks: int = num_encoder_blocks
+        self.embed_dim: int = embed_dim
+        self.num_heads: int = num_heads
+        self.dropout: float = dropout
+
         self.norm = nn.BatchNorm2d(in_channels)
         self.dconv = DepthWiseConv2d(in_channels, expansion=2, kernel_size=(5, 5), stride=(1, 1), padding=2)
         self.pconv = PointWiseConv2d(self.dconv.out_channels, out_channels=1, bias=True)
