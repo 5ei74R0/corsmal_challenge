@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from corsmal_challenge.models.convolution import DepthWiseConv2d, PointWiseConv2d
-from corsmal_challenge.models.linear_transformer import LinearTransformerEncoder as LiT
+from corsmal_challenge.models.transformer import TransformerEncoder
 
 
 class LogMelEncoder(nn.Module):
@@ -28,7 +28,7 @@ class LogMelEncoder(nn.Module):
         self.dconv = DepthWiseConv2d(in_channels, expansion=2, kernel_size=(5, 5), stride=(1, 1), padding=2)
         self.pconv = PointWiseConv2d(self.dconv.out_channels, out_channels=1, bias=True)
 
-        self.transformer = LiT(
+        self.transformer = TransformerEncoder(
             num_encoder_blocks,
             embed_dim,
             num_heads,

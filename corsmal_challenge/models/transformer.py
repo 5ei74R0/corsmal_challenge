@@ -1,7 +1,3 @@
-"""
-contains linear transformer
-- https://arxiv.org/pdf/2006.16236.pdf
-"""
 import math
 from typing import Callable, List, Optional
 
@@ -12,14 +8,14 @@ from torch import nn
 from corsmal_challenge.models.activation import SquaredReLU
 
 
-class MultiheadedLinearSelfAttention(nn.Module):
+class MultiheadedSelfAttention(nn.Module):
     def __init__(
         self,
         embed_dim: int,
         num_heads: int = 12,
         dropout: float = 0.05,
     ):
-        super(MultiheadedLinearSelfAttention, self).__init__()
+        super(MultiheadedSelfAttention, self).__init__()
         self.num_heads = num_heads
         assert embed_dim % num_heads == 0, "Embedding dim % num heads != 0"
         self.head_dim: int = embed_dim // num_heads
@@ -46,24 +42,22 @@ class MultiheadedLinearSelfAttention(nn.Module):
         """
         batches, sequence_len, _ = inputs.shape
         qkv: torch.Tensor = (
-            self.qkv(inputs).reshape(batches, sequence_len, 3, self.num_heads, self.head_dim).permute(2, 0, 1, 3, 4)
+            self.qkv(inputs).reshape(batches, sequence_len, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         )
-        q, k, v = qkv  # batches, sequence_len, num_heads, head_dim
+        q, k, v = qkv  # batches, num_heads, sequence_len, head_dim
 
-        # mask
+        qk = torch.matmul(q, k.transpose(-1, -2)) * self.scale
         if mask is not None:
-            k = torch.einsum("bshd,bs->bshd", k, mask)
+            qk += mask.float() * -1e38
+        attn = qk.softmax(dim=-1)
+        x = torch.matmul(attn, v)
 
-        kv: torch.Tensor = torch.einsum("bshd,bshm->bhmd", self._kernel_fn(k), v)
-        z: torch.Tensor = 1 / (torch.einsum("bshd,bhd->bsh", self._kernel_fn(q), self._kernel_fn(k).sum(dim=1)) + 1e-6)
-        attn: torch.Tensor = torch.einsum("bshd,bhmd,bsh->bshm", self._kernel_fn(q), kv, z)
-
-        attn = attn.reshape(batches, sequence_len, self.head_dim * self.num_heads)
-        attn = self.attn_dropout(attn)
-        proj = self.projection(attn)
+        x = x.permute(0, 2, 1, 3).reshape(batches, sequence_len, self.head_dim * self.num_heads)
+        x = self.attn_dropout(x)
+        proj = self.projection(x)
         proj = self.proj_dropout(proj)
 
-        return attn.contiguous()
+        return proj
 
 
 class PositionalEncoding(nn.Module):
@@ -105,16 +99,16 @@ class FFN(nn.Module):
         return x
 
 
-class LinearTransformerEncoderBlock(nn.Module):
+class TransformerEncoderBlock(nn.Module):
     def __init__(
         self,
         embed_dim: int,
         num_heads: int,
         dropout: float = 0.05,
     ):
-        super(LinearTransformerEncoderBlock, self).__init__()
+        super(TransformerEncoderBlock, self).__init__()
         self.norm = nn.LayerNorm(embed_dim)
-        self.mhla = MultiheadedLinearSelfAttention(embed_dim, num_heads, dropout)
+        self.mhla = MultiheadedSelfAttention(embed_dim, num_heads, dropout)
         self.ffn = FFN(embed_dim, expansion=2)
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -127,7 +121,7 @@ class LinearTransformerEncoderBlock(nn.Module):
         return out
 
 
-class LinearTransformerEncoder(nn.Module):
+class TransformerEncoder(nn.Module):
     def __init__(
         self,
         num_layers: int,
@@ -135,9 +129,9 @@ class LinearTransformerEncoder(nn.Module):
         num_heads: int,
         dropout: float = 0.05,
     ):
-        super(LinearTransformerEncoder, self).__init__()
+        super(TransformerEncoder, self).__init__()
         self.pe = PositionalEncoding(embed_dim)
-        self.first_block = MultiheadedLinearSelfAttention(
+        self.first_block = MultiheadedSelfAttention(
             embed_dim,
             num_heads,
             dropout,
@@ -156,10 +150,10 @@ class LinearTransformerEncoder(nn.Module):
         num_heads: int,
         dropout: float = 0.05,
     ):
-        layer_stack: List[LinearTransformerEncoderBlock] = []
+        layer_stack: List[TransformerEncoderBlock] = []
 
         for _ in range(num_layers):
-            layer_stack.append(LinearTransformerEncoderBlock(embed_dim, num_heads, dropout))
+            layer_stack.append(TransformerEncoderBlock(embed_dim, num_heads, dropout))
 
         return nn.Sequential(*layer_stack)
 

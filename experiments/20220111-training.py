@@ -46,13 +46,16 @@ class TaskChallenger(nn.Module):
 
 
 RAND_SEED = 0
-EPOCH = 1
+EPOCH = 2
 
 if __name__ == "__main__":
     fix_random_seeds(RAND_SEED)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = TaskChallenger(2).to(device)
+    # model = TaskChallenger()
+    # model.load_state_dict(torch.load(current_dir / "20220111-result.pt"))
+    model = TaskChallenger()
+    model = model.to(device)
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
     train_dataset = AudioDataset(
@@ -124,8 +127,10 @@ if __name__ == "__main__":
         val_loss_t2.append(metrics["val loss"])
         print(metrics)
 
-    plt.plot(train_loss_t1, label='train_loss_t1')
-    plt.plot(train_loss_t2, label='train_loss_t2')
-    plt.plot(val_loss_t2, label='test_loss_t1')
-    plt.plot(val_loss_t2, label='test_loss_t2')
+    plt.plot(train_loss_t1, label="train_loss_t1")
+    plt.plot(train_loss_t2, label="train_loss_t2")
+    plt.plot(val_loss_t2, label="test_loss_t1")
+    plt.plot(val_loss_t2, label="test_loss_t2")
     plt.legend()
+    plt.savefig(str(current_dir / "20220111-result.png"))
+    torch.save(model.state_dict(), current_dir / "20220111-result.pt")
