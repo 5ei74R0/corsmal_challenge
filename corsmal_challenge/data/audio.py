@@ -2,6 +2,7 @@ import pathlib
 from typing import Tuple
 
 import torch
+import torch.nn.functional as F
 import torchaudio
 
 
@@ -11,7 +12,9 @@ class Wav:
         wav_audio_data = tup[0]
         sample_rate = tup[1]
         self.wav_audio_data = wav_audio_data
-        self.sample_rate = sample_rate
+        self.sample_rate: int = sample_rate
+        self.channels: int = wav_audio_data.shape[0]
+        self.sample_len: int = wav_audio_data.shape[1]
 
     def get_audio_length(self) -> float:
         """Return length of audio data
@@ -35,6 +38,10 @@ class Wav:
             sample_rate=self.sample_rate,
             n_fft=n_fft,
         )(self.wav_audio_data)
+
+    def padding(self, head_padding: int, tail_padding: int):
+        self.wav_audio_data = F.pad(self.wav_audio_data, (head_padding, tail_padding), "constant", 0)
+        self.sample_len += head_padding + tail_padding
 
 
 def load_wav(path: pathlib.Path) -> Wav:
