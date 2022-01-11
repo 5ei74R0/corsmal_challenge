@@ -18,6 +18,7 @@ class AudioDataset(torch.utils.data.Dataset):
         train: bool = True,
         query: str = "type",  # or "level"
         random_crop: bool = False,
+        strong_crop: bool = False,
     ):
         fix_random_seeds(seed)
         behave_deterministically()
@@ -30,6 +31,7 @@ class AudioDataset(torch.utils.data.Dataset):
         self.train: bool = train
         self.query: str = query
         self.random_crop: bool = random_crop
+        self.strong_crop: bool = strong_crop
 
     def _get_annotations(self, path_to_annotation_file) -> List[Dict[str, int]]:
         with open(str(path_to_annotation_file), "r") as f:
@@ -69,11 +71,12 @@ class AudioDataset(torch.utils.data.Dataset):
 
         if self.random_crop:
             sequence_len: int = spectrogram.shape[-1]
-            start: int = random.randrange(0, sequence_len // 2)
-            end: int = random.randrange(sequence_len // 2, sequence_len)
-            if end - start <= 20:
-                start = 0
-                end = sequence_len - 1
+            if self.strong_crop:
+                start = random.randrange(0, sequence_len // 10 * 4)
+                end = random.randrange(sequence_len // 10 * 6, sequence_len)
+            else:
+                start = random.randrange(0, sequence_len // 10 * 2)
+                end = random.randrange(sequence_len // 10 * 8, sequence_len)
             return spectrogram[:, :, start : end + 1], label
 
         return spectrogram, label
