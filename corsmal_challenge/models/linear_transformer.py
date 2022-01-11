@@ -3,7 +3,7 @@ contains linear transformer
 - https://arxiv.org/pdf/2006.16236.pdf
 """
 import math
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -17,8 +17,7 @@ class MultiheadedLinearSelfAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int = 12,
-        attn_dropout: float = 0.05,
-        proj_dropout: float = 0.05,
+        dropout: float = 0.05,
     ):
         super(MultiheadedLinearSelfAttention, self).__init__()
         self.num_heads = num_heads
@@ -27,20 +26,33 @@ class MultiheadedLinearSelfAttention(nn.Module):
         self.scale: float = self.head_dim ** -0.5
 
         self.qkv: Callable[..., torch.Tensor] = nn.Linear(embed_dim, embed_dim * 3)
-        self.attn_dropout: Callable[..., torch.Tensor] = nn.Dropout(attn_dropout)
+        self.attn_dropout: Callable[..., torch.Tensor] = nn.Dropout(dropout)
         self.projection: Callable[..., torch.Tensor] = nn.Linear(embed_dim, embed_dim)
-        self.proj_dropout: Callable[..., torch.Tensor] = nn.Dropout(proj_dropout)
+        self.proj_dropout: Callable[..., torch.Tensor] = nn.Dropout(dropout)
 
     @torch.jit.script
     def _kernel_fn(x: torch.Tensor) -> torch.Tensor:  # type: ignore
         return F.elu(x) + 1
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """forward
+
+        Args:
+            inputs (torch.Tensor): (batches, sequence_len, embed_dim)
+            mask (torch.Tensor): (batches, sequence_len)
+
+        Returns:
+            torch.Tensor: (batches, sequence_len)
+        """
         batches, sequence_len, _ = inputs.shape
         qkv: torch.Tensor = (
             self.qkv(inputs).reshape(batches, sequence_len, 3, self.num_heads, self.head_dim).permute(2, 0, 1, 3, 4)
         )
         q, k, v = qkv  # batches, sequence_len, num_heads, head_dim
+
+        # mask
+        if mask is not None:
+            k = torch.einsum("bshd,bs->bshd", k, mask)
 
         kv: torch.Tensor = torch.einsum("bshd,bshm->bhmd", self._kernel_fn(k), v)
         z: torch.Tensor = 1 / (torch.einsum("bshd,bhd->bsh", self._kernel_fn(q), self._kernel_fn(k).sum(dim=1)) + 1e-6)
@@ -98,17 +110,16 @@ class LinearTransformerEncoderBlock(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        attn_dropout: float = 0.05,
-        proj_dropout: float = 0.05,
+        dropout: float = 0.05,
     ):
         super(LinearTransformerEncoderBlock, self).__init__()
         self.norm = nn.LayerNorm(embed_dim)
-        self.mhla = MultiheadedLinearSelfAttention(embed_dim, num_heads, attn_dropout, proj_dropout)
-        self.ffn = FFN(embed_dim)
+        self.mhla = MultiheadedLinearSelfAttention(embed_dim, num_heads, dropout)
+        self.ffn = FFN(embed_dim, expansion=2)
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         x = self.norm(inputs)
-        x = self.mhla(x)
+        x = self.mhla(x, mask)
         internal = x + inputs
         x = self.norm(internal)
         x = self.ffn(x)
@@ -122,16 +133,20 @@ class LinearTransformerEncoder(nn.Module):
         num_layers: int,
         embed_dim: int,
         num_heads: int,
-        attn_dropout: float = 0.05,
-        proj_dropout: float = 0.05,
+        dropout: float = 0.05,
     ):
         super(LinearTransformerEncoder, self).__init__()
-        self.layer_stack = self._make_encoder_block_stack(
-            num_layers,
+        self.pe = PositionalEncoding(embed_dim)
+        self.first_block = MultiheadedLinearSelfAttention(
             embed_dim,
             num_heads,
-            attn_dropout,
-            proj_dropout,
+            dropout,
+        )
+        self.layer_stack = self._make_encoder_block_stack(
+            num_layers - 1,
+            embed_dim,
+            num_heads,
+            dropout,
         )
 
     def _make_encoder_block_stack(
@@ -139,16 +154,19 @@ class LinearTransformerEncoder(nn.Module):
         num_layers: int,
         embed_dim: int,
         num_heads: int,
-        attn_dropout: float = 0.05,
-        proj_dropout: float = 0.05,
+        dropout: float = 0.05,
     ):
         layer_stack: List[LinearTransformerEncoderBlock] = []
 
         for _ in range(num_layers):
-            layer_stack.append(LinearTransformerEncoderBlock(embed_dim, num_heads, attn_dropout, proj_dropout))
+            layer_stack.append(LinearTransformerEncoderBlock(embed_dim, num_heads, dropout))
 
         return nn.Sequential(*layer_stack)
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        x = self.layer_stack(inputs)
+    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+        # x = inputs
+        x = F.pad(inputs, (0, 0, 1, 0), "constant", 0)  # add class token
+        x = self.pe(x)
+        x = self.first_block(x, mask)
+        x = self.layer_stack(x)
         return x
