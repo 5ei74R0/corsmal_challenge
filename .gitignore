@@ -3,6 +3,8 @@
 /data/**/*
 !/data/README.md
 !/data/corsmal_data.csv
+/experiments/**/*.pt
+/experiments/**/*.png
 
 ### Template for Python (provided by GitHub)
 # Byte-compiled / optimized / DLL files

@@ -27,11 +27,11 @@ from corsmal_challenge.train.train_val import classification_loop  # noqa (E402)
 from corsmal_challenge.utils import fix_random_seeds  # noqa (E402)
 
 
-class TaskChallenger(nn.Module):
+class TaskChallenger2(nn.Module):
     def __init__(self, task_id: int = 1):
-        super(TaskChallenger, self).__init__()
+        super(TaskChallenger2, self).__init__()
         self.task_id = task_id
-        self.encoder = LogMelEncoder()
+        self.encoder = LogMelEncoder(num_encoder_blocks=4, num_heads=4)
         self.classify_head1 = T1Head()
         self.classify_head2 = T2Head()
 
@@ -52,9 +52,8 @@ if __name__ == "__main__":
     fix_random_seeds(RAND_SEED)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = TaskChallenger()
-    model.load_state_dict(torch.load(current_dir / "20220111-result.pt"))
-    model = TaskChallenger()
+    model = TaskChallenger2()
+    # model.load_state_dict(torch.load(current_dir / "20220111-result?.pt"))
     model = model.to(device)
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
@@ -63,18 +62,12 @@ if __name__ == "__main__":
         data_dir / "ccm_train_annotation.json",
         seed=RAND_SEED,
         train=True,
-        query="type",
-        random_crop=True,
-        strong_crop=True,
     )
     val_dataset = AudioDataset(
         data_dir,
         data_dir / "ccm_train_annotation.json",
         seed=RAND_SEED,
         train=False,
-        query="type",
-        random_crop=False,
-        strong_crop=False,
     )
     train_dataloader = DataLoader(train_dataset, specified_seed=RAND_SEED, shuffle=True)
     val_dataloader = DataLoader(val_dataset, specified_seed=RAND_SEED, shuffle=True)
@@ -107,7 +100,7 @@ if __name__ == "__main__":
 
         train_dataset.query = "level"
         val_dataset.query = "level"
-        train_dataset.random_crop = True
+        train_dataset.random_crop = False
         train_dataset.strong_crop = False
         model.task_id = 1
 
@@ -125,10 +118,10 @@ if __name__ == "__main__":
         val_loss_t2.append(metrics["val loss"])
         print(metrics)
 
-    plt.plot(train_loss_t1, label="train_loss_t1")
-    plt.plot(train_loss_t2, label="train_loss_t2")
-    plt.plot(val_loss_t2, label="test_loss_t1")
-    plt.plot(val_loss_t2, label="test_loss_t2")
+    plt.plot(train_loss_t1, label="train loss: t1")
+    plt.plot(val_loss_t2, label="val loss: t1")
+    plt.plot(train_loss_t2, label="train loss: t2")
+    plt.plot(val_loss_t2, label="val loss: t2")
     plt.legend()
-    plt.savefig(str(current_dir / "20220111-result.png"))
-    torch.save(model.state_dict(), current_dir / "20220111-result.pt")
+    plt.savefig(str(current_dir / "20220111-result2.png"))
+    torch.save(model.state_dict(), current_dir / "20220111-result2.pt")

@@ -24,11 +24,12 @@ def contrastive_learning_loop(
     train_correct_pred = 0
     num_train_data = len(train_dataloader.dataset)  # type: ignore  # map-style Dataset has __len__()
     num_batches_train = len(train_dataloader)
-    for data, target in train_dataloader:
+    it = iter(train_dataloader)
+    for data1, data2, data3 in zip(it, it, it):
         # data transport
         if device != torch.device("cpu"):
-            data = data.to(device, non_blocking=True)
-            target = target.to(device, non_blocking=True)
+            data1 = data1.to(device, non_blocking=True)
+            data2 = data2.to(device, non_blocking=True)
 
         for param in model.parameters():  # fast zero_grad
             param.grad = None
