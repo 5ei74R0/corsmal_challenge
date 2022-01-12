@@ -27,11 +27,11 @@ from corsmal_challenge.train.train_val import classification_loop  # noqa (E402)
 from corsmal_challenge.utils import fix_random_seeds  # noqa (E402)
 
 
-class TaskChallenger2(nn.Module):
+class TaskChallenger3(nn.Module):
     def __init__(self, task_id: int = 1):
-        super(TaskChallenger2, self).__init__()
+        super(TaskChallenger3, self).__init__()
         self.task_id = task_id
-        self.encoder = LogMelEncoder(num_encoder_blocks=4, num_heads=4)
+        self.encoder = LogMelEncoder(num_encoder_blocks=3, num_heads=4)
         self.classify_head1 = T1Head()
         self.classify_head2 = T2Head()
 
@@ -52,11 +52,11 @@ if __name__ == "__main__":
     fix_random_seeds(RAND_SEED)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = TaskChallenger2()
-    # model.load_state_dict(torch.load(current_dir / "20220111-result?.pt"))
+    model = TaskChallenger3()
+    # model.load_state_dict(torch.load(current_dir / "20220111-result2.pt"))
     model = model.to(device)
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), momentum=0.5, lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters())
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.70)
     train_dataset = AudioDataset(
         data_dir,
@@ -126,5 +126,5 @@ if __name__ == "__main__":
     plt.plot(train_loss_t2, label="train loss: t2")
     plt.plot(val_loss_t2, label="val loss: t2")
     plt.legend()
-    plt.savefig(str(current_dir / "20220111-result2.png"))
-    torch.save(model.state_dict(), current_dir / "20220111-result2.pt")
+    plt.savefig(str(current_dir / "20220111-result3.png"))
+    torch.save(model.state_dict(), current_dir / "20220111-result3.pt")
