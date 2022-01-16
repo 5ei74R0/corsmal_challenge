@@ -30,6 +30,7 @@ Hardware
 - GPU RAM: 16GB GDDR6
 - CPU: Core i9 11980HK
 - RAM: 64 GB
+
 Libraries
 - CUDA 11.1
 - Miniconda 4.7.12 (pyenv)
