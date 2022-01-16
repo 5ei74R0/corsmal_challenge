@@ -159,7 +159,7 @@ class TransformerEncoder(nn.Module):
 
     def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         # x = inputs
-        x = F.pad(inputs, (0, 0, 1, 0), "constant", 0)  # add class token
+        x = F.pad(inputs, (0, 0, 1, 0), "constant", 0)  # add class token at the head of given sequence
         x = self.pe(x)
         x = self.first_block(x, mask)
         x = self.layer_stack(x)

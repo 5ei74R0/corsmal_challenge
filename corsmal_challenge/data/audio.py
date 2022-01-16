@@ -45,7 +45,7 @@ class Wav:
 
 
 def load_wav(path: pathlib.Path) -> Wav:
-    """Given path to the WAV file, return tensor and sampling rate.
+    """Given path to the WAV file, return WAV class.
 
     Args:
         path (pathlib.Path): path to the WAV file
