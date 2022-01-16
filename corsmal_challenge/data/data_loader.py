@@ -1,7 +1,12 @@
-"""
-define dataloader that has additional settings
-- https://github.com/OtsuKotsu/MLExp/blob/main/mlexp/utils/data/dataloader.py
-"""
+# MLExp ReproducibleDataLoader
+# https://github.com/OtsuKotsu/MLExp/blob/main/mlexp/utils/data/dataloader.py
+
+# Copyright (c) 2021 OtsuKotsu
+
+# This software is released under the MIT License.
+# http://opensource.org/licenses/mit-license.php
+
+"""define dataloader that has additional settings"""
 import os
 import random
 from typing import Any, Callable, List, Optional, Sequence, TypeVar

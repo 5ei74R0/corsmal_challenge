@@ -17,7 +17,18 @@ repo. for [**The CORSMAL challenge: Audio-visual object classification for human
 > - Miniconda 4.7.12
 
 #### additional information
-- The version of python3 in miniconda4.7.12 is `python3.7.4`
+- The version of python3 in miniconda4.7.12 (pyenv) is `python3.7.4`
+
+#### developer's env.
+Hardware
+- Ubuntu 20.04LTS
+- GPU: GeForce RTX 3080
+- GPU RAM: 16GB GDDR6
+- CPU: Core i9 11980HK
+- RAM: 64 GB
+Libraries
+- CUDA 11.1
+- Miniconda 4.7.12 (pyenv)
 
 ### Dataset
 Download from [official page](https://corsmal.eecs.qmul.ac.uk/containers_manip.html) & unzip them into `data/` directory.  
