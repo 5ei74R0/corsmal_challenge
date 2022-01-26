@@ -1,6 +1,10 @@
 # corsmal_challenge
 repo. for [**The CORSMAL challenge: Audio-visual object classification for human-robot collaboration**](https://corsmal.eecs.qmul.ac.uk/challenge.html)
 
+## Mainly worked on dev-cu111 & dev branch.
+
+## From 2022/01/16, merge this repo into https://github.com/YuigaWada/CORSMAL2021 and worked there.
+
 ## Get Start
 ### Installation
 1. Install `torch`, `torchaudio` by pip.. See https://pytorch.org/ and check your hardware requirements
@@ -35,6 +39,7 @@ Hardware
 - GPU RAM: 16GB GDDR6
 - CPU: Core i9 11980HK
 - RAM: 64 GB
+
 Libraries
 - CUDA 11.1
 - Miniconda 4.7.12 (pyenv)
